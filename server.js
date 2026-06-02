@@ -10,7 +10,6 @@ const PORT = process.env.PORT || 3000;
 const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
 fs.ensureDirSync(DOWNLOAD_DIR);
 
-// কুকি ফাইল চেক
 const COOKIE_FILE = path.join(__dirname, 'cookies.txt');
 if (!fs.existsSync(COOKIE_FILE)) {
   console.error('cookies.txt not found!');
@@ -30,12 +29,11 @@ app.post('/download', async (req, res) => {
   const id = uuidv4();
   activeDownloads.set(id, { status: 'queued', progress: 0 });
 
-  // ব্যাকগ্রাউন্ডে ডাউনলোড প্রসেস চালু
   (async () => {
     const outputTemplate = path.join(DOWNLOAD_DIR, `${id}_%(title)s.%(ext)s`);
     let format = 'bestvideo+bestaudio/best';
     if (quality === '1080p') format = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]';
-    else if (quality === '720p') format = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]';
+    if (quality === '720p') format = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]';
 
     const args = [
       '--cookies', COOKIE_FILE,
@@ -67,7 +65,6 @@ app.post('/download', async (req, res) => {
         if (videoFile) {
           const filePath = path.join(DOWNLOAD_DIR, videoFile);
           activeDownloads.set(id, { status: 'completed', progress: 100, file: videoFile, filePath });
-          // 1 ঘণ্টা পর ফাইল ডিলিট
           setTimeout(() => fs.remove(filePath).catch(() => {}), 3600000);
         } else {
           activeDownloads.set(id, { status: 'failed', error: 'File not found' });
@@ -153,4 +150,6 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.listen(PORT, () => console.log(\`✅ Server running on port \${PORT}\`));
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
